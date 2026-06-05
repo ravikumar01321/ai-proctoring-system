@@ -1,22 +1,39 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AI Online Examination Proctoring System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: users
+    description: User management
+  - name: exams
+    description: Exam management
+  - name: questions
+    description: Question management
+  - name: enrollments
+    description: Exam enrollments
+  - name: answers
+    description: Answer submission
+  - name: violations
+    description: Proctoring violations
+  - name: results
+    description: Exam results
+  - name: dashboard
+    description: Dashboard statistics
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +41,1017 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad request
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Unauthorized
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: OK
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users (admin only)
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /exams:
+    get:
+      operationId: listExams
+      tags: [exams]
+      summary: List exams
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Exam"
+    post:
+      operationId: createExam
+      tags: [exams]
+      summary: Create exam
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExamInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Exam"
+
+  /exams/{id}:
+    get:
+      operationId: getExam
+      tags: [exams]
+      summary: Get exam by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Exam"
+    patch:
+      operationId: updateExam
+      tags: [exams]
+      summary: Update exam
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExamUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Exam"
+    delete:
+      operationId: deleteExam
+      tags: [exams]
+      summary: Delete exam
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /exams/{id}/stats:
+    get:
+      operationId: getExamStats
+      tags: [exams]
+      summary: Get exam statistics
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamStats"
+
+  /exams/{id}/questions:
+    get:
+      operationId: listQuestions
+      tags: [questions]
+      summary: List questions for an exam
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Question"
+    post:
+      operationId: createQuestion
+      tags: [questions]
+      summary: Create question for exam
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuestionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+
+  /questions/{id}:
+    patch:
+      operationId: updateQuestion
+      tags: [questions]
+      summary: Update question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuestionUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+    delete:
+      operationId: deleteQuestion
+      tags: [questions]
+      summary: Delete question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /exams/{id}/enroll:
+    post:
+      operationId: enrollInExam
+      tags: [enrollments]
+      summary: Enroll in exam
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Enrollment"
+
+  /exams/{id}/enrollments:
+    get:
+      operationId: listExamEnrollments
+      tags: [enrollments]
+      summary: List enrollments for an exam
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Enrollment"
+
+  /enrollments:
+    get:
+      operationId: listMyEnrollments
+      tags: [enrollments]
+      summary: List current user's enrollments
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Enrollment"
+
+  /enrollments/{id}:
+    get:
+      operationId: getEnrollment
+      tags: [enrollments]
+      summary: Get enrollment by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Enrollment"
+
+  /enrollments/{id}/start:
+    post:
+      operationId: startExam
+      tags: [enrollments]
+      summary: Start the exam session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Enrollment"
+
+  /enrollments/{id}/submit:
+    post:
+      operationId: submitExam
+      tags: [enrollments]
+      summary: Submit exam and end session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamResult"
+
+  /enrollments/{id}/answers:
+    get:
+      operationId: listAnswers
+      tags: [answers]
+      summary: Get answers for enrollment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Answer"
+    post:
+      operationId: submitAnswer
+      tags: [answers]
+      summary: Submit or update an answer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnswerInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Answer"
+
+  /enrollments/{id}/violations:
+    get:
+      operationId: listViolations
+      tags: [violations]
+      summary: Get violations for enrollment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Violation"
+    post:
+      operationId: reportViolation
+      tags: [violations]
+      summary: Report a proctoring violation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ViolationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Violation"
+
+  /enrollments/{id}/result:
+    get:
+      operationId: getResult
+      tags: [results]
+      summary: Get result for enrollment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamResult"
+
+  /exams/{id}/results:
+    get:
+      operationId: listExamResults
+      tags: [results]
+      summary: List all results for an exam
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExamResult"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get admin/proctor dashboard statistics
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent activity feed
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /dashboard/violation-summary:
+    get:
+      operationId: getViolationSummary
+      tags: [dashboard]
+      summary: Get violation type breakdown
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ViolationSummaryItem"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    RegisterInput:
+      type: object
+      required: [name, email, password, role]
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+        password:
+          type: string
+          minLength: 6
+        role:
+          type: string
+          enum: [student, proctor, admin]
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+
+    User:
+      type: object
+      required: [id, name, email, role, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [student, proctor, admin]
+        avatarUrl:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [student, proctor, admin]
+        isActive:
+          type: boolean
+
+    Exam:
+      type: object
+      required: [id, title, duration, status, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        duration:
+          type: integer
+          description: Duration in minutes
+        startTime:
+          type: ["string", "null"]
+        endTime:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, scheduled, active, completed, cancelled]
+        maxViolations:
+          type: integer
+        proctorId:
+          type: ["integer", "null"]
+        totalQuestions:
+          type: integer
+        totalPoints:
+          type: integer
+        passingScore:
+          type: integer
+        createdAt:
+          type: string
+
+    ExamInput:
+      type: object
+      required: [title, duration]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        duration:
+          type: integer
+        startTime:
+          type: string
+        endTime:
+          type: string
+        maxViolations:
+          type: integer
+        proctorId:
+          type: integer
+        passingScore:
+          type: integer
+
+    ExamUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        duration:
+          type: integer
+        startTime:
+          type: string
+        endTime:
+          type: string
+        status:
+          type: string
+          enum: [draft, scheduled, active, completed, cancelled]
+        maxViolations:
+          type: integer
+        proctorId:
+          type: integer
+        passingScore:
+          type: integer
+
+    ExamStats:
+      type: object
+      required: [examId, totalEnrolled, totalCompleted, totalFlagged, averageScore, passRate, violationCount]
+      properties:
+        examId:
+          type: integer
+        totalEnrolled:
+          type: integer
+        totalCompleted:
+          type: integer
+        totalFlagged:
+          type: integer
+        averageScore:
+          type: number
+        passRate:
+          type: number
+        violationCount:
+          type: integer
+
+    Question:
+      type: object
+      required: [id, examId, type, content, points, order]
+      properties:
+        id:
+          type: integer
+        examId:
+          type: integer
+        type:
+          type: string
+          enum: [mcq, true_false, short_answer]
+        content:
+          type: string
+        options:
+          type: ["string", "null"]
+          description: JSON string of options array for MCQ
+        correctAnswer:
+          type: ["string", "null"]
+        points:
+          type: integer
+        order:
+          type: integer
+
+    QuestionInput:
+      type: object
+      required: [type, content, points]
+      properties:
+        type:
+          type: string
+          enum: [mcq, true_false, short_answer]
+        content:
+          type: string
+        options:
+          type: string
+        correctAnswer:
+          type: string
+        points:
+          type: integer
+        order:
+          type: integer
+
+    QuestionUpdate:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [mcq, true_false, short_answer]
+        content:
+          type: string
+        options:
+          type: string
+        correctAnswer:
+          type: string
+        points:
+          type: integer
+        order:
+          type: integer
+
+    Enrollment:
+      type: object
+      required: [id, examId, userId, status, createdAt]
+      properties:
+        id:
+          type: integer
+        examId:
+          type: integer
+        userId:
+          type: integer
+        status:
+          type: string
+          enum: [enrolled, active, submitted, flagged, disqualified]
+        startedAt:
+          type: ["string", "null"]
+        submittedAt:
+          type: ["string", "null"]
+        violationCount:
+          type: integer
+        exam:
+          $ref: "#/components/schemas/Exam"
+        user:
+          $ref: "#/components/schemas/User"
+        createdAt:
+          type: string
+
+    Answer:
+      type: object
+      required: [id, enrollmentId, questionId, createdAt]
+      properties:
+        id:
+          type: integer
+        enrollmentId:
+          type: integer
+        questionId:
+          type: integer
+        answer:
+          type: ["string", "null"]
+        isCorrect:
+          type: ["boolean", "null"]
+        score:
+          type: integer
+        createdAt:
+          type: string
+
+    AnswerInput:
+      type: object
+      required: [questionId, answer]
+      properties:
+        questionId:
+          type: integer
+        answer:
+          type: string
+
+    Violation:
+      type: object
+      required: [id, enrollmentId, type, severity, timestamp]
+      properties:
+        id:
+          type: integer
+        enrollmentId:
+          type: integer
+        type:
+          type: string
+          enum: [face_missing, multiple_faces, eye_deviation, audio_detected, tab_switch, fullscreen_exit, copy_paste, phone_detected]
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        details:
+          type: ["string", "null"]
+        timestamp:
+          type: string
+
+    ViolationInput:
+      type: object
+      required: [type, severity]
+      properties:
+        type:
+          type: string
+          enum: [face_missing, multiple_faces, eye_deviation, audio_detected, tab_switch, fullscreen_exit, copy_paste, phone_detected]
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        details:
+          type: string
+
+    ExamResult:
+      type: object
+      required: [id, enrollmentId, totalScore, maxScore, percentage, passed, createdAt]
+      properties:
+        id:
+          type: integer
+        enrollmentId:
+          type: integer
+        totalScore:
+          type: integer
+        maxScore:
+          type: integer
+        percentage:
+          type: number
+        grade:
+          type: ["string", "null"]
+        passed:
+          type: boolean
+        violationCount:
+          type: integer
+        enrollment:
+          $ref: "#/components/schemas/Enrollment"
+        createdAt:
+          type: string
+
+    DashboardStats:
+      type: object
+      required: [totalExams, activeExams, totalStudents, totalProctors, ongoingSessions, flaggedSessions, completedToday, averagePassRate]
+      properties:
+        totalExams:
+          type: integer
+        activeExams:
+          type: integer
+        totalStudents:
+          type: integer
+        totalProctors:
+          type: integer
+        ongoingSessions:
+          type: integer
+        flaggedSessions:
+          type: integer
+        completedToday:
+          type: integer
+        averagePassRate:
+          type: number
+
+    ActivityItem:
+      type: object
+      required: [id, type, message, timestamp]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [exam_started, exam_submitted, violation_detected, student_flagged, exam_created]
+        message:
+          type: string
+        studentName:
+          type: ["string", "null"]
+        examTitle:
+          type: ["string", "null"]
+        timestamp:
+          type: string
+
+    ViolationSummaryItem:
+      type: object
+      required: [type, count, percentage]
+      properties:
+        type:
+          type: string
+        count:
+          type: integer
+        percentage:
+          type: number
