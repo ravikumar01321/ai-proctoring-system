@@ -2,6 +2,7 @@ import { useGetDashboardStats, getGetDashboardStatsQueryKey, useGetRecentActivit
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { motion } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Shield, Users, BookOpen, Activity, AlertTriangle, CheckCircle, Clock, TrendingUp } from "lucide-react";
 
@@ -16,25 +17,18 @@ const VIOLATION_COLORS: Record<string, string> = {
   phone_detected: "#84cc16",
 };
 
-function StatCard({ label, value, icon: Icon, color }: { label: string; value: string | number; icon: typeof Shield; color: string }) {
-  return (
-    <Card data-testid={`stat-${label.toLowerCase().replace(/\s+/g, '-')}`}>
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">{label}</p>
-            <p className="text-3xl font-bold text-foreground">{value}</p>
-          </div>
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
-            <Icon className="w-5 h-5" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+const STATS_CONFIG = [
+  { key: "totalExams", label: "Total Exams", icon: BookOpen, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+  { key: "activeExams", label: "Active Exams", icon: Activity, color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20" },
+  { key: "totalStudents", label: "Total Students", icon: Users, color: "text-violet-400", bg: "bg-violet-500/10", border: "border-violet-500/20" },
+  { key: "totalProctors", label: "Proctors", icon: Shield, color: "text-cyan-400", bg: "bg-cyan-500/10", border: "border-cyan-500/20" },
+  { key: "ongoingSessions", label: "Live Sessions", icon: Clock, color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+  { key: "flaggedSessions", label: "Flagged", icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20" },
+  { key: "completedToday", label: "Completed Today", icon: CheckCircle, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+  { key: "averagePassRate", label: "Avg Pass Rate", icon: TrendingUp, color: "text-indigo-400", bg: "bg-indigo-500/10", border: "border-indigo-500/20", suffix: "%" },
+];
 
-function activityTypeColor(type: string) {
+function activityBadgeClass(type: string) {
   const map: Record<string, string> = {
     exam_started: "bg-blue-500/10 text-blue-400",
     exam_submitted: "bg-green-500/10 text-green-400",
@@ -55,6 +49,9 @@ function timeAgo(ts: string) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
+const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
+
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useGetDashboardStats({ query: { queryKey: getGetDashboardStatsQueryKey() } });
   const { data: activity, isLoading: activityLoading } = useGetRecentActivity({ query: { queryKey: getGetRecentActivityQueryKey() } });
@@ -62,81 +59,135 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8" data-testid="dashboard-page">
-      <div>
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-[9px] font-mono tracking-[0.25em] text-primary uppercase">// Live Overview</span>
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
+          </span>
+        </div>
         <h1 className="text-2xl font-bold text-foreground">Command Center</h1>
-        <p className="text-muted-foreground text-sm mt-1">Real-time overview of all active proctoring sessions</p>
-      </div>
+        <p className="text-muted-foreground text-sm mt-0.5">Real-time overview of all active proctoring sessions</p>
+      </motion.div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statsLoading ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-24" />) : <>
-          <StatCard label="Total Exams" value={stats?.totalExams ?? 0} icon={BookOpen} color="bg-blue-500/10 text-blue-400" />
-          <StatCard label="Active Exams" value={stats?.activeExams ?? 0} icon={Activity} color="bg-green-500/10 text-green-400" />
-          <StatCard label="Total Students" value={stats?.totalStudents ?? 0} icon={Users} color="bg-violet-500/10 text-violet-400" />
-          <StatCard label="Proctors" value={stats?.totalProctors ?? 0} icon={Shield} color="bg-cyan-500/10 text-cyan-400" />
-          <StatCard label="Live Sessions" value={stats?.ongoingSessions ?? 0} icon={Clock} color="bg-amber-500/10 text-amber-400" />
-          <StatCard label="Flagged" value={stats?.flaggedSessions ?? 0} icon={AlertTriangle} color="bg-red-500/10 text-red-400" />
-          <StatCard label="Completed Today" value={stats?.completedToday ?? 0} icon={CheckCircle} color="bg-emerald-500/10 text-emerald-400" />
-          <StatCard label="Avg Pass Rate" value={`${stats?.averagePassRate ?? 0}%`} icon={TrendingUp} color="bg-indigo-500/10 text-indigo-400" />
-        </>}
-      </div>
+      <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {statsLoading
+          ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)
+          : STATS_CONFIG.map((cfg) => {
+              const raw = (stats as Record<string, number> | undefined)?.[cfg.key] ?? 0;
+              const value = cfg.suffix ? `${raw}${cfg.suffix}` : raw;
+              const Icon = cfg.icon;
+              return (
+                <motion.div key={cfg.key} variants={item}>
+                  <Card className={`border ${cfg.border} hover:scale-[1.02] transition-transform duration-200`} data-testid={`stat-${cfg.key}`}>
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-[9px] font-mono tracking-widest uppercase text-muted-foreground mb-2">{cfg.label}</p>
+                          <motion.p
+                            className="text-3xl font-bold text-foreground"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.3, type: "spring" }}
+                          >
+                            {value}
+                          </motion.p>
+                        </div>
+                        <div className={`w-9 h-9 rounded-lg ${cfg.bg} border ${cfg.border} flex items-center justify-center`}>
+                          <Icon className={`w-4 h-4 ${cfg.color}`} />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Charts + Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Violation chart */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Violation Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {violationsLoading ? <Skeleton className="h-48" /> : violations && violations.length > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={violations} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="type" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => v.replace(/_/g, " ")} />
-                  <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                  <Tooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
-                    labelFormatter={(v) => String(v).replace(/_/g, " ")}
-                  />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                    {violations.map((entry) => (
-                      <Cell key={entry.type} fill={VIOLATION_COLORS[entry.type] ?? "#6366f1"} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">No violations recorded yet</div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recent activity */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y divide-border max-h-56 overflow-y-auto">
-              {activityLoading ? (
-                <div className="p-4 space-y-3">
-                  {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10" />)}
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
+          <Card className="border-border/60">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-4 rounded-full bg-primary" />
+                <CardTitle className="text-xs font-mono tracking-widest uppercase text-muted-foreground">Violation Breakdown</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {violationsLoading ? <Skeleton className="h-52" /> : violations && violations.length > 0 ? (
+                <ResponsiveContainer width="100%" height={210}>
+                  <BarChart data={violations} margin={{ top: 0, right: 0, left: -24, bottom: 0 }}>
+                    <XAxis dataKey="type" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => v.replace(/_/g, " ").substring(0, 8)} />
+                    <YAxis tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+                    <Tooltip
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
+                      labelFormatter={(v) => String(v).replace(/_/g, " ")}
+                    />
+                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                      {violations.map((entry) => (
+                        <Cell key={entry.type} fill={VIOLATION_COLORS[entry.type] ?? "#6366f1"} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-52 flex flex-col items-center justify-center text-muted-foreground text-sm gap-2">
+                  <CheckCircle className="w-8 h-8 text-green-500/50" />
+                  <p>No violations recorded yet</p>
                 </div>
-              ) : activity && activity.length > 0 ? activity.map((item) => (
-                <div key={item.id} className="flex items-start gap-3 px-5 py-3" data-testid={`activity-${item.id}`}>
-                  <Badge variant="secondary" className={`text-[10px] px-1.5 shrink-0 mt-0.5 ${activityTypeColor(item.type)}`}>
-                    {item.type.replace(/_/g, " ")}
-                  </Badge>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground leading-snug">{item.message}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{timeAgo(item.timestamp)}</p>
-                  </div>
-                </div>
-              )) : (
-                <div className="py-12 text-center text-muted-foreground text-sm">No activity yet</div>
               )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Activity feed */}
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
+          <Card className="border-border/60">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-4 rounded-full bg-primary" />
+                <CardTitle className="text-xs font-mono tracking-widest uppercase text-muted-foreground">Recent Activity</CardTitle>
+                <span className="ml-auto relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-border/60 max-h-60 overflow-y-auto">
+                {activityLoading ? (
+                  <div className="p-4 space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10" />)}</div>
+                ) : activity && activity.length > 0 ? (
+                  activity.map((item, i) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, x: 12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.06 + 0.3 }}
+                      className="flex items-start gap-3 px-5 py-3 hover:bg-muted/30 transition-colors"
+                      data-testid={`activity-${item.id}`}
+                    >
+                      <Badge variant="secondary" className={`text-[9px] px-1.5 shrink-0 mt-0.5 ${activityBadgeClass(item.type)}`}>
+                        {item.type.replace(/_/g, " ")}
+                      </Badge>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-foreground leading-snug">{item.message}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">{timeAgo(item.timestamp)}</p>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="py-12 text-center text-muted-foreground text-sm">No activity yet</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </div>
   );
