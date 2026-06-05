@@ -35,11 +35,13 @@ import type {
   ListExamsParams,
   ListUsersParams,
   LoginInput,
+  ProfileUpdate,
   Question,
   QuestionInput,
   QuestionUpdate,
   RegisterInput,
   User,
+  UserStats,
   UserUpdate,
   Violation,
   ViolationInput,
@@ -342,6 +344,154 @@ export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = Err
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetMeQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateMeUrl = () => {
+
+
+
+
+  return `/api/auth/me`
+}
+
+/**
+ * @summary Update own profile
+ */
+export const updateMe = async (profileUpdate: ProfileUpdate, options?: RequestInit): Promise<User> => {
+
+  return customFetch<User>(getUpdateMeUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      profileUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdateMeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMe>>, TError,{data: BodyType<ProfileUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMe>>, TError,{data: BodyType<ProfileUpdate>}, TContext> => {
+
+const mutationKey = ['updateMe'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMe>>, {data: BodyType<ProfileUpdate>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateMe(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMeMutationResult = NonNullable<Awaited<ReturnType<typeof updateMe>>>
+    export type UpdateMeMutationBody = BodyType<ProfileUpdate>
+    export type UpdateMeMutationError = ErrorType<void>
+
+    /**
+ * @summary Update own profile
+ */
+export const useUpdateMe = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMe>>, TError,{data: BodyType<ProfileUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateMe>>,
+        TError,
+        {data: BodyType<ProfileUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateMeMutationOptions(options));
+    }
+
+export const getGetUserStatsUrl = (id: number,) => {
+
+
+
+
+  return `/api/users/${id}/stats`
+}
+
+/**
+ * @summary Get stats for a specific user (admin only)
+ */
+export const getUserStats = async (id: number, options?: RequestInit): Promise<UserStats> => {
+
+  return customFetch<UserStats>(getGetUserStatsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetUserStatsQueryKey = (id: number,) => {
+    return [
+    `/api/users/${id}/stats`
+    ] as const;
+    }
+
+
+export const getGetUserStatsQueryOptions = <TData = Awaited<ReturnType<typeof getUserStats>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetUserStatsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUserStats>>> = ({ signal }) => getUserStats(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUserStats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetUserStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getUserStats>>>
+export type GetUserStatsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get stats for a specific user (admin only)
+ */
+
+export function useGetUserStats<TData = Awaited<ReturnType<typeof getUserStats>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetUserStatsQueryOptions(id,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

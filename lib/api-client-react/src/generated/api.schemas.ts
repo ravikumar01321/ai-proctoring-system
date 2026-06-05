@@ -57,6 +57,31 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface ProfileUpdate {
+  /** @minLength 2 */
+  name?: string;
+  email?: string;
+  currentPassword?: string;
+  /** @minLength 6 */
+  newPassword?: string;
+}
+
+export type UserStatsRecentScoresItem = {
+  examTitle: string;
+  score: number;
+  passed: boolean;
+  date: string;
+};
+
+export interface UserStats {
+  totalExams: number;
+  completedExams: number;
+  averageScore: number;
+  totalViolations: number;
+  passRate: number;
+  recentScores?: UserStatsRecentScoresItem[];
+}
+
 export type UserUpdateRole = typeof UserUpdateRole[keyof typeof UserUpdateRole];
 
 

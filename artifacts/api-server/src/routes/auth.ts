@@ -5,6 +5,29 @@ import { RegisterBody, LoginBody, GetMeResponse, LoginResponse } from "@workspac
 import { hashPassword, comparePassword, signToken } from "../lib/auth";
 import { requireAuth } from "../middlewares/requireAuth";
 
+function parseUpdateMe(body: unknown): { name?: string; email?: string; currentPassword?: string; newPassword?: string } | null {
+  if (typeof body !== "object" || body === null) return null;
+  const b = body as Record<string, unknown>;
+  const result: { name?: string; email?: string; currentPassword?: string; newPassword?: string } = {};
+  if (b.name !== undefined) {
+    if (typeof b.name !== "string" || b.name.length < 2) return null;
+    result.name = b.name;
+  }
+  if (b.email !== undefined) {
+    if (typeof b.email !== "string" || !b.email.includes("@")) return null;
+    result.email = b.email;
+  }
+  if (b.currentPassword !== undefined) {
+    if (typeof b.currentPassword !== "string") return null;
+    result.currentPassword = b.currentPassword;
+  }
+  if (b.newPassword !== undefined) {
+    if (typeof b.newPassword !== "string" || b.newPassword.length < 6) return null;
+    result.newPassword = b.newPassword;
+  }
+  return result;
+}
+
 const router: IRouter = Router();
 
 router.post("/auth/register", async (req, res): Promise<void> => {
@@ -89,6 +112,56 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
     avatarUrl: user.avatarUrl ?? null,
     isActive: user.isActive,
     createdAt: user.createdAt.toISOString(),
+  }));
+});
+
+router.patch("/auth/me", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.user!.userId;
+  const body = UpdateMeBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: "Invalid input" });
+    return;
+  }
+
+  const [current] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+  if (!current) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  const updates: Partial<typeof usersTable.$inferInsert> = {};
+  if (body.data.name) updates.name = body.data.name;
+  if (body.data.email) {
+    const [existing] = await db.select().from(usersTable).where(eq(usersTable.email, body.data.email));
+    if (existing && existing.id !== userId) {
+      res.status(400).json({ error: "Email already in use" });
+      return;
+    }
+    updates.email = body.data.email;
+  }
+
+  if (body.data.newPassword) {
+    if (!body.data.currentPassword) {
+      res.status(400).json({ error: "Current password required to change password" });
+      return;
+    }
+    const valid = await comparePassword(body.data.currentPassword, current.passwordHash);
+    if (!valid) {
+      res.status(400).json({ error: "Current password is incorrect" });
+      return;
+    }
+    updates.passwordHash = await hashPassword(body.data.newPassword);
+  }
+
+  const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, userId)).returning();
+  res.json(GetMeResponse.parse({
+    id: updated.id,
+    name: updated.name,
+    email: updated.email,
+    role: updated.role,
+    avatarUrl: updated.avatarUrl ?? null,
+    isActive: updated.isActive,
+    createdAt: updated.createdAt.toISOString(),
   }));
 });
 

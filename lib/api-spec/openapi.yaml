@@ -96,6 +96,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateMe
+      tags: [auth]
+      summary: Update own profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Bad request
+
+  /users/{id}/stats:
+    get:
+      operationId: getUserStats
+      tags: [users]
+      summary: Get stats for a specific user (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserStats"
 
   /auth/logout:
     post:
@@ -727,6 +765,49 @@ components:
           type: boolean
         createdAt:
           type: string
+
+    ProfileUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 6
+
+    UserStats:
+      type: object
+      required: [totalExams, completedExams, averageScore, totalViolations, passRate]
+      properties:
+        totalExams:
+          type: integer
+        completedExams:
+          type: integer
+        averageScore:
+          type: number
+        totalViolations:
+          type: integer
+        passRate:
+          type: number
+        recentScores:
+          type: array
+          items:
+            type: object
+            required: [examTitle, score, passed, date]
+            properties:
+              examTitle:
+                type: string
+              score:
+                type: number
+              passed:
+                type: boolean
+              date:
+                type: string
 
     UserUpdate:
       type: object

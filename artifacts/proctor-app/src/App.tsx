@@ -14,9 +14,12 @@ import NewExam from "@/pages/NewExam";
 import ExamDetail from "@/pages/ExamDetail";
 import ExamMonitor from "@/pages/ExamMonitor";
 import Students from "@/pages/Students";
+import AdminUsers from "@/pages/AdminUsers";
 import MyExams from "@/pages/MyExams";
 import TakeExam from "@/pages/TakeExam";
 import Results from "@/pages/Results";
+import Profile from "@/pages/Profile";
+import StudentStats from "@/pages/StudentStats";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,10 +43,23 @@ function Router() {
 
       <Route path="/" component={RootRedirect} />
 
+      {/* Profile — all authenticated roles */}
+      <Route path="/profile">
+        <ProtectedRoute allowedRoles={["admin", "proctor", "student"]}>
+          <AppLayout><Profile /></AppLayout>
+        </ProtectedRoute>
+      </Route>
+
       {/* Admin / Proctor routes */}
       <Route path="/dashboard">
         <ProtectedRoute allowedRoles={["admin", "proctor"]}>
           <AppLayout><Dashboard /></AppLayout>
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/admin/users">
+        <ProtectedRoute allowedRoles={["admin"]}>
+          <AppLayout><AdminUsers /></AppLayout>
         </ProtectedRoute>
       </Route>
 
@@ -54,7 +70,7 @@ function Router() {
       </Route>
 
       <Route path="/exams/:id/monitor">
-        {(params) => (
+        {() => (
           <ProtectedRoute allowedRoles={["admin", "proctor"]}>
             <AppLayout><ExamMonitor /></AppLayout>
           </ProtectedRoute>
@@ -62,7 +78,7 @@ function Router() {
       </Route>
 
       <Route path="/exams/:id">
-        {(params) => (
+        {() => (
           <ProtectedRoute allowedRoles={["admin", "proctor"]}>
             <AppLayout><ExamDetail /></AppLayout>
           </ProtectedRoute>
@@ -88,8 +104,14 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
+      <Route path="/my-stats">
+        <ProtectedRoute allowedRoles={["student"]}>
+          <AppLayout><StudentStats /></AppLayout>
+        </ProtectedRoute>
+      </Route>
+
       <Route path="/exam/:enrollmentId/take">
-        {(params) => (
+        {() => (
           <ProtectedRoute allowedRoles={["student"]}>
             <TakeExam />
           </ProtectedRoute>
@@ -97,7 +119,7 @@ function Router() {
       </Route>
 
       <Route path="/results/:enrollmentId">
-        {(params) => (
+        {() => (
           <ProtectedRoute allowedRoles={["student"]}>
             <AppLayout><Results /></AppLayout>
           </ProtectedRoute>

@@ -70,6 +70,55 @@ export const GetMeResponse = zod.object({
 
 
 /**
+ * @summary Update own profile
+ */
+export const updateMeBodyNameMin = 2;
+
+export const updateMeBodyNewPasswordMin = 6;
+
+
+
+export const UpdateMeBody = zod.object({
+  "name": zod.string().min(updateMeBodyNameMin).optional(),
+  "email": zod.string().optional(),
+  "currentPassword": zod.string().optional(),
+  "newPassword": zod.string().min(updateMeBodyNewPasswordMin).optional()
+})
+
+export const UpdateMeResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "role": zod.enum(['student', 'proctor', 'admin']),
+  "avatarUrl": zod.string().nullish(),
+  "isActive": zod.boolean().optional(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Get stats for a specific user (admin only)
+ */
+export const GetUserStatsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetUserStatsResponse = zod.object({
+  "totalExams": zod.number(),
+  "completedExams": zod.number(),
+  "averageScore": zod.number(),
+  "totalViolations": zod.number(),
+  "passRate": zod.number(),
+  "recentScores": zod.array(zod.object({
+  "examTitle": zod.string(),
+  "score": zod.number(),
+  "passed": zod.boolean(),
+  "date": zod.string()
+})).optional()
+})
+
+
+/**
  * @summary List all users (admin only)
  */
 export const ListUsersQueryParams = zod.object({
