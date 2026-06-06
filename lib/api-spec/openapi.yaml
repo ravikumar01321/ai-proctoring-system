@@ -1046,6 +1046,8 @@ components:
           enum: [low, medium, high, critical]
         details:
           type: ["string", "null"]
+        screenshotData:
+          type: ["string", "null"]
         timestamp:
           type: string
 
@@ -1060,6 +1062,8 @@ components:
           type: string
           enum: [low, medium, high, critical]
         details:
+          type: string
+        screenshotData:
           type: string
 
     ExamResult:

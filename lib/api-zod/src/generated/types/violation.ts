@@ -15,5 +15,7 @@ export interface Violation {
   severity: ViolationSeverity;
   /** @nullable */
   details?: string | null;
+  /** @nullable */
+  screenshotData?: string | null;
   timestamp: string;
 }

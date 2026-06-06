@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, violationsTable, enrollmentsTable, examsTable, usersTable, activityTable } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { ListViolationsParams, ReportViolationParams, ReportViolationBody } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 
@@ -13,6 +13,7 @@ function violationToJson(v: typeof violationsTable.$inferSelect) {
     type: v.type,
     severity: v.severity,
     details: v.details ?? null,
+    screenshotData: v.screenshotData ?? null,
     timestamp: v.timestamp.toISOString(),
   };
 }
@@ -46,6 +47,7 @@ router.post("/enrollments/:id/violations", requireAuth, async (req, res): Promis
     type: body.data.type,
     severity: body.data.severity,
     details: body.data.details ?? null,
+    screenshotData: (body.data as { screenshotData?: string }).screenshotData ?? null,
   }).returning();
   const [enrollment] = await db.select().from(enrollmentsTable).where(eq(enrollmentsTable.id, enrollmentId));
   if (enrollment) {

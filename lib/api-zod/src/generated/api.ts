@@ -676,6 +676,7 @@ export const ListViolationsResponseItem = zod.object({
   "type": zod.enum(['face_missing', 'multiple_faces', 'eye_deviation', 'audio_detected', 'tab_switch', 'fullscreen_exit', 'copy_paste', 'phone_detected']),
   "severity": zod.enum(['low', 'medium', 'high', 'critical']),
   "details": zod.string().nullish(),
+  "screenshotData": zod.string().nullish(),
   "timestamp": zod.string()
 })
 export const ListViolationsResponse = zod.array(ListViolationsResponseItem)
@@ -691,7 +692,8 @@ export const ReportViolationParams = zod.object({
 export const ReportViolationBody = zod.object({
   "type": zod.enum(['face_missing', 'multiple_faces', 'eye_deviation', 'audio_detected', 'tab_switch', 'fullscreen_exit', 'copy_paste', 'phone_detected']),
   "severity": zod.enum(['low', 'medium', 'high', 'critical']),
-  "details": zod.string().optional()
+  "details": zod.string().optional(),
+  "screenshotData": zod.string().optional()
 })
 
 

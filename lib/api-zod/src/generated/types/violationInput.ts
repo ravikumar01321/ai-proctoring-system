@@ -12,4 +12,5 @@ export interface ViolationInput {
   type: ViolationInputType;
   severity: ViolationInputSeverity;
   details?: string;
+  screenshotData?: string;
 }

@@ -8,6 +8,7 @@ export const violationsTable = pgTable("violations", {
   type: text("type", { enum: ["face_missing", "multiple_faces", "eye_deviation", "audio_detected", "tab_switch", "fullscreen_exit", "copy_paste", "phone_detected"] }).notNull(),
   severity: text("severity", { enum: ["low", "medium", "high", "critical"] }).notNull().default("low"),
   details: text("details"),
+  screenshotData: text("screenshot_data"),
   timestamp: timestamp("timestamp", { withTimezone: true }).notNull().defaultNow(),
 });
 

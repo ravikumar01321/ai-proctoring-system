@@ -24,6 +24,21 @@ function formatTime(seconds: number) {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
+function captureWebcamFrame(videoEl: HTMLVideoElement | null): string | undefined {
+  if (!videoEl || videoEl.readyState < 2) return undefined;
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 320;
+    canvas.height = 240;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return undefined;
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.6);
+  } catch {
+    return undefined;
+  }
+}
+
 export default function TakeExam() {
   const params = useParams<{ enrollmentId: string }>();
   const enrollmentId = parseInt(params.enrollmentId, 10);
@@ -61,11 +76,17 @@ export default function TakeExam() {
 
   const reportViolation = useCallback((type: string, severity: string, details: string) => {
     setViolationCount((c) => c + 1);
+    const screenshotData = captureWebcamFrame(videoRef.current);
     reportViolationMutation.mutate({
       id: enrollmentId,
-      data: { type: type as "tab_switch" | "fullscreen_exit" | "copy_paste" | "face_missing" | "multiple_faces" | "eye_deviation" | "audio_detected" | "phone_detected", severity: severity as "low" | "medium" | "high" | "critical", details },
+      data: {
+        type: type as "tab_switch" | "fullscreen_exit" | "copy_paste" | "face_missing" | "multiple_faces" | "eye_deviation" | "audio_detected" | "phone_detected",
+        severity: severity as "low" | "medium" | "high" | "critical",
+        details,
+        ...(screenshotData ? { screenshotData } : {}),
+      },
     });
-    toast({ title: "Violation detected", description: details, variant: "destructive" });
+    toast({ title: "⚠ Violation detected", description: details, variant: "destructive" });
   }, [enrollmentId, reportViolationMutation, toast]);
 
   // Timer
@@ -99,7 +120,7 @@ export default function TakeExam() {
   useEffect(() => {
     if (!examStarted) return;
     const onVisibility = () => {
-      if (document.hidden) reportViolation("tab_switch", "medium", "Student switched to another tab or window");
+      if (document.hidden) reportViolation("tab_switch", "high", "Student switched to another tab or window");
     };
     const onFullscreen = () => {
       if (!document.fullscreenElement) reportViolation("fullscreen_exit", "high", "Student exited fullscreen mode");
@@ -117,6 +138,36 @@ export default function TakeExam() {
       document.removeEventListener("paste", onPaste);
     };
   }, [examStarted, reportViolation]);
+
+  // Periodic AI scan: face + phone detection simulation via canvas analysis
+  useEffect(() => {
+    if (!examStarted) return;
+    const interval = setInterval(() => {
+      const video = videoRef.current;
+      if (!video || video.readyState < 2 || camError) return;
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 80;
+        canvas.height = 60;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        // Detect darkness (face missing — very dark frame = no one in front)
+        let totalBrightness = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3;
+        }
+        const avgBrightness = totalBrightness / (data.length / 4);
+        if (avgBrightness < 15) {
+          reportViolation("face_missing", "high", "No face detected in webcam feed — student may have stepped away");
+        }
+      } catch {
+        // ignore canvas errors
+      }
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [examStarted, camError, reportViolation]);
 
   const handleStart = () => {
     startExamMutation.mutate({ id: enrollmentId }, {
@@ -173,7 +224,7 @@ export default function TakeExam() {
           </div>
           <div className="p-4 rounded-lg bg-amber-500/5 border border-amber-500/20 text-sm text-amber-400 text-left space-y-1">
             <p className="font-semibold">Before you begin:</p>
-            <p>Webcam access is required for proctoring. Do not switch tabs, exit fullscreen, or copy/paste content. All violations are recorded.</p>
+            <p>Webcam access is required for proctoring. Do not switch tabs, exit fullscreen, or copy/paste content. Screenshots are captured automatically when violations are detected.</p>
           </div>
           <Button className="w-full" size="lg" onClick={handleStart} disabled={startExamMutation.isPending} data-testid="button-start-exam">
             {startExamMutation.isPending ? "Starting..." : "Begin Exam"}

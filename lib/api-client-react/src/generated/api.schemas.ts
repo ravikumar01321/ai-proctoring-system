@@ -309,6 +309,8 @@ export interface Violation {
   severity: ViolationSeverity;
   /** @nullable */
   details?: string | null;
+  /** @nullable */
+  screenshotData?: string | null;
   timestamp: string;
 }
 
@@ -340,6 +342,7 @@ export interface ViolationInput {
   type: ViolationInputType;
   severity: ViolationInputSeverity;
   details?: string;
+  screenshotData?: string;
 }
 
 export interface ExamResult {
