@@ -117,8 +117,8 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
 
 router.patch("/auth/me", requireAuth, async (req, res): Promise<void> => {
   const userId = req.user!.userId;
-  const body = UpdateMeBody.safeParse(req.body);
-  if (!body.success) {
+  const body = parseUpdateMe(req.body);
+  if (!body) {
     res.status(400).json({ error: "Invalid input" });
     return;
   }
@@ -130,27 +130,27 @@ router.patch("/auth/me", requireAuth, async (req, res): Promise<void> => {
   }
 
   const updates: Partial<typeof usersTable.$inferInsert> = {};
-  if (body.data.name) updates.name = body.data.name;
-  if (body.data.email) {
-    const [existing] = await db.select().from(usersTable).where(eq(usersTable.email, body.data.email));
+  if (body.name) updates.name = body.name;
+  if (body.email) {
+    const [existing] = await db.select().from(usersTable).where(eq(usersTable.email, body.email));
     if (existing && existing.id !== userId) {
       res.status(400).json({ error: "Email already in use" });
       return;
     }
-    updates.email = body.data.email;
+    updates.email = body.email;
   }
 
-  if (body.data.newPassword) {
-    if (!body.data.currentPassword) {
+  if (body.newPassword) {
+    if (!body.currentPassword) {
       res.status(400).json({ error: "Current password required to change password" });
       return;
     }
-    const valid = await comparePassword(body.data.currentPassword, current.passwordHash);
+    const valid = await comparePassword(body.currentPassword, current.passwordHash);
     if (!valid) {
       res.status(400).json({ error: "Current password is incorrect" });
       return;
     }
-    updates.passwordHash = await hashPassword(body.data.newPassword);
+    updates.passwordHash = await hashPassword(body.newPassword);
   }
 
   const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, userId)).returning();
