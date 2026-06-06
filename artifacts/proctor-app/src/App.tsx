@@ -20,6 +20,7 @@ import TakeExam from "@/pages/TakeExam";
 import Results from "@/pages/Results";
 import Profile from "@/pages/Profile";
 import StudentStats from "@/pages/StudentStats";
+import AdminAnalytics from "@/pages/AdminAnalytics";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -94,6 +95,12 @@ function Router() {
       <Route path="/students">
         <ProtectedRoute allowedRoles={["admin", "proctor"]}>
           <AppLayout><Students /></AppLayout>
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/admin/analytics">
+        <ProtectedRoute allowedRoles={["admin", "proctor"]}>
+          <AppLayout><AdminAnalytics /></AppLayout>
         </ProtectedRoute>
       </Route>
 
