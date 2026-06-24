@@ -1,0 +1,1 @@
+const fs = require('fs'); console.log('cwd', process.cwd()); console.log('exists', fs.existsSync('./node_modules/@esbuild/win32-x64')); console.log('dir', fs.existsSync('./node_modules/@esbuild')); console.log('ls', fs.readdirSync('./node_modules/@esbuild')); try { console.log(require.resolve('@esbuild/win32-x64')); } catch (err) { console.error(err); process.exit(1); }

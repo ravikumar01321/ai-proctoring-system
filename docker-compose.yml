@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: exam-guardian-db
+    environment:
+      POSTGRES_USER: guardian
+      POSTGRES_PASSWORD: securepassword123
+      POSTGRES_DB: exam_guardian
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guardian -d exam_guardian"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - exam-guardian-network
+
+  # API Server
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: exam-guardian-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      DATABASE_URL: postgresql://guardian:securepassword123@postgres:5432/exam_guardian
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./artifacts/api-server/dist:/app/artifacts/api-server/dist:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/api/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - exam-guardian-network
+
+  # Nginx Reverse Proxy & Frontend Server
+  nginx:
+    image: nginx:alpine
+    container_name: exam-guardian-proxy
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./artifacts/proctor-app/dist/public:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - exam-guardian-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  exam-guardian-network:
+    driver: bridge

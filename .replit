@@ -11,6 +11,18 @@ env = { "CI" = "true" }
 [workflows]
 runButton = "Project"
 
+[[workflows.workflow]]
+name = "Project"
+description = "Build and start the API server"
+language = "javascript"
+author = "system"
+
+[workflows.workflow.setup]
+run = "pnpm install"
+
+[workflows.workflow.run]
+run = "pnpm run build && PORT=8080 NODE_ENV=production pnpm --filter @workspace/api-server run start"
+
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true
